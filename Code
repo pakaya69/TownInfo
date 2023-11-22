@@ -1,72 +1,30 @@
-// This is a simplified example using Spring Boot and RestTemplate
+// This is a simplified example using Spring Boot and Jsoup for HTML parsing
 
 @RestController
 public class LocationController {
 
     @GetMapping("/getInfo")
     public ResponseEntity<String> getLocationInfo(@RequestParam String townName) {
-        // Use the OpenCage Geocoding API to get location information
-        String apiKey = "c0c9b2c7975c41c7b0c7b77320183447";
-        String apiUrl = "https://api.opencagedata.com/geocode/v1/json?key=" + apiKey + "&q=" + townName;
+        try {
+            // Use Wikipedia to get information about the town
+            String wikipediaUrl = "https://en.wikipedia.org/wiki/" + townName;
+            Document document = Jsoup.connect(wikipediaUrl).get();
 
-        RestTemplate restTemplate = new RestTemplate();
-        ResponseEntity<String> response = restTemplate.getForEntity(apiUrl, String.class);
+            // Parse the HTML to extract relevant information
+            String locationInfo = parseWikipediaPage(document);
 
-        // Parse the response and extract relevant information
-        // You may need to adjust this based on the API response structure
-        String locationInfo = parseApiResponse(response.getBody());
-
-        return ResponseEntity.ok(locationInfo);
+            return ResponseEntity.ok(locationInfo);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error retrieving data from Wikipedia");
+        }
     }
 
-    private String parseApiResponse(String responseBody) {
-        // Implement the logic to parse the JSON response and extract the required information
-        // Return a string containing district, province, and postal code
+    private String parseWikipediaPage(Document document) {
+        // Implement the logic to parse the HTML and extract the required information
+        // You may need to inspect the structure of Wikipedia pages for towns in Sri Lanka
+        // and adjust this based on the actual structure.
+        // Return a string containing district, province, and postal code.
         return "District: Colombo, Province: Western, Postal Code: 00100";
     }
 }
-Frontend (HTML/CSS):
-Create a simple HTML form for user input and display the results.
-html
-Copy code
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Town Information</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-        }
-
-        form {
-            margin: 20px;
-        }
-    </style>
-</head>
-<body>
-    <form id="townForm">
-        <label for="townName">Enter Town Name:</label>
-        <input type="text" id="townName" name="townName" required>
-        <button type="button" onclick="getLocationInfo()">Get Information</button>
-    </form>
-
-    <div id="result"></div>
-
-    <script>
-        function getLocationInfo() {
-            var townName = document.getElementById("townName").value;
-
-            // Make an AJAX request to the backend
-            // Update the URL to match your backend endpoint
-            fetch('http://localhost:8080/getInfo?townName=' + encodeURIComponent(townName))
-                .then(response => response.text())
-                .then(data => {
-                    document.getElementById("result").innerText = data;
-                })
-                .catch(error => console.error('Error:', error));
-        }
-    </script>
-</body>
-</html>
